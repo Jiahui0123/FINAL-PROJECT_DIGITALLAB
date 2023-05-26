@@ -16,6 +16,8 @@
 #define COL6 A2
 #define COL7 A1
 #define COL8 A0
+
+#define BUTTON A5
 const int row[] = {
   ROW1, ROW2, ROW3, ROW4, ROW5, ROW6, ROW7, ROW8};
 const int col[] = {
@@ -30,14 +32,31 @@ byte scan[8][8] = {
   {1,0,1,1,1,1,0,1},
   {1,1,0,0,0,0,1,1}};
 
+  byte heart[8][8] = {
+  {0,1,1,1,1,1,1,0},
+  {0,1,1,1,1,1,1,0},
+  {0,1,1,1,1,1,1,0},
+  {0,0,0,0,0,0,0,0},
+  {0,1,1,1,1,1,1,0},
+  {0,1,1,1,1,1,1,0},
+  {0,1,1,1,1,1,1,0},
+  {0,1,1,1,1,1,1,0}};
+
 int melody[] = {
   NOTE_GS2, NOTE_G3, NOTE_E3, NOTE_A3, NOTE_G3, 0, NOTE_B3, NOTE_C4
 };
 int noteDurations[] = {
   4, 8, 8, 4, 4, 4, 4, 4
 };
+int melody2[] = {
+  NOTE_B4, NOTE_D1, NOTE_G1, NOTE_E2, NOTE_G3, 0, NOTE_C5, NOTE_D4
+};
+int noteDurations2[] = {
+  8, 4, 4, 8, 8, 4, 4, 8
+};
 int thisNote=-1,noteDuration=0;
 long previousTime=0,presentTime=0,pauseBetweenNotes=0;
+byte previousState=1, presentState=1, patternNumber=0;
 
 void setup() {
   for (byte i = 0; i <= 8; i++) {
@@ -46,7 +65,9 @@ void setup() {
   for (byte i = 0; i <= 8; i++) {
     pinMode(col[i], OUTPUT);
   }
+  pinMode(A5,INPUT_PULLUP);
 }
+
 void checkToPlay(){
   presentTime=millis();
   if(presentTime-previousTime>=pauseBetweenNotes){
@@ -62,12 +83,40 @@ void checkToPlay(){
       pauseBetweenNotes = noteDuration * 1.30;
       previousTime=millis();
     }
-
+  }
+}
+void checkToPlay2(){
+  presentTime=millis();
+  if(presentTime-previousTime>=pauseBetweenNotes){
+    thisNote+=1;
+    if(thisNote>=8){
+      thisNote=-1;
+      pauseBetweenNotes=1000;
+      previousTime=millis();
+    }
+    else{
+      noteDuration = 1000 / noteDurations2[thisNote];
+      tone(2, melody2[thisNote], noteDuration);
+      pauseBetweenNotes = noteDuration * 1.30;
+      previousTime=millis();
+    }
   }
 }
 void loop() {
-  showPattern(scan);
-  checkToPlay();
+  presentState = digitalRead(BUTTON);
+  if(presentState==0&&previousState==1){
+    patternNumber++;
+    if(patternNumber>1)patternNumber=0;
+  }
+  if(patternNumber==0){
+    showPattern(scan);
+    checkToPlay();
+  }
+  else{
+    showPattern(heart);
+    checkToPlay2();
+  }
+  previousState=presentState;
 }
 
 void showPattern(byte matrix[8][8]){
